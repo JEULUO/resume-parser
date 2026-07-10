@@ -6,16 +6,17 @@ WORKDIR /app
 
 # 复制 Maven 构建文件
 COPY backend/pom.xml .
-COPY backend/.mvn ./.mvn
-COPY backend/mvnw.cmd .
+
+# 复制 Maven Wrapper 相关文件（如果没有就跳过这行）
+COPY backend/mvnw* .
 
 # 复制源代码
 COPY backend/src ./src
 
-# 构建应用（跳过测试，加快构建速度）
-RUN ./mvnw.cmd clean package -DskipTests || ./mvnw clean package -DskipTests
+# 构建应用（跳过测试）
+RUN ./mvnw clean package -DskipTests
 
-# 暴露端口（和 application.yml 里配置的一致）
+# 暴露端口
 EXPOSE 8000
 
 # 启动应用
