@@ -13,7 +13,14 @@ const jsonOutput = document.querySelector("#jsonOutput");
 const copyJsonBtn = document.querySelector("#copyJsonBtn");
 
 const savedApiBase = localStorage.getItem("resumeMatcherApiBase");
-if (savedApiBase) apiBaseInput.value = savedApiBase;
+const isLocalFrontend = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const isLocalApi = savedApiBase && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/i.test(savedApiBase);
+
+if (savedApiBase && (isLocalFrontend || !isLocalApi)) {
+  apiBaseInput.value = savedApiBase;
+} else {
+  localStorage.setItem("resumeMatcherApiBase", apiBaseInput.value);
+}
 
 window.addEventListener("DOMContentLoaded", () => {
   if (window.lucide) window.lucide.createIcons();

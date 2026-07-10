@@ -161,7 +161,7 @@ REDIS_URL=你的 Redis 地址，可选
 部署完成后得到后端地址，例如：
 
 ```text
-https://ai-resume-parser-api.onrender.com
+https://resume-parser-4ge0.onrender.com
 ```
 
 ### 前端部署到 GitHub Pages
