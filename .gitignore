@@ -7,6 +7,9 @@ venv/
 .mypy_cache/
 .ruff_cache/
 backend/data/
+backend/target/
+backend/.mvn/apache-maven-*/
+backend/.mvn/apache-maven-*-bin.zip
 node_modules/
 dist/
 .DS_Store

@@ -1,1 +1,0 @@
-"""AI resume parser backend."""

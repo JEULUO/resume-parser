@@ -1,10 +1,12 @@
-FROM python:3.12-slim
-
+FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /app
-COPY backend/requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+COPY backend/pom.xml /app/pom.xml
+RUN mvn -q dependency:go-offline
+COPY backend/src /app/src
+RUN mvn -q -DskipTests package
 
-COPY backend /app/backend
-ENV PYTHONPATH=/app
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+COPY --from=build /app/target/resume-matcher-0.0.1-SNAPSHOT.jar /app/app.jar
 EXPOSE 8000
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

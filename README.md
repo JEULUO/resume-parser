@@ -5,16 +5,18 @@
 ## 功能
 
 - 上传单个 PDF 简历，支持多页文本型 PDF。
-- 使用 `pypdf` 提取 PDF 文本，并进行去噪、换行合并和段落整理。
+- 使用 Java + PDFBox 提取 PDF 文本，并进行去噪、换行合并和段落整理。
 - 优先调用 OpenAI 模型提取姓名、电话、邮箱、地址、求职意向、期望薪资、工作年限、学历背景、项目经历、技能等字段。
-- 未配置 `OPENAI_API_KEY` 时自动使用规则解析兜底，保证基础演示可运行。
+- 未配置 `OPENAI_API_KEY` 时自动使用 Java 规则解析兜底，保证基础演示可运行。
 - 接收岗位需求文本，提取岗位关键词，计算技能匹配率、经验相关性和综合匹配分。
-- 使用 SQLite 文件缓存简历解析结果和岗位匹配结果，避免重复计算。
+- 使用内存缓存，配置 `REDIS_URL` 后可接入 Redis 缓存，避免重复解析和重复评分。
 - 前端为纯静态页面，可直接部署到 GitHub Pages；后端可部署到 Render、Railway 或任意 Docker 平台。
 
 ## 技术选型
 
-- 后端：FastAPI、Pydantic、pypdf、OpenAI SDK、Redis/SQLite Cache
+- 后端：Java 17、Spring Boot 3、Spring Web、Bean Validation、Apache PDFBox、Spring Data Redis、Java HttpClient
+- AI：OpenAI Chat Completions API，可配置 `OPENAI_MODEL=gpt-4.1-mini`
+- 缓存：ConcurrentHashMap 本地缓存 + Redis 可选增强
 - 前端：原生 HTML/CSS/JavaScript、Fetch API、Lucide Icons
 - 部署：GitHub Pages 静态前端 + Render Docker 后端
 
@@ -23,17 +25,19 @@
 ```text
 .
 ├── backend
-│   ├── app
-│   │   ├── ai_extractor.py    # AI/规则关键信息提取
-│   │   ├── cache.py           # SQLite 缓存
-│   │   ├── config.py          # 环境变量配置
-│   │   ├── main.py            # FastAPI 路由
-│   │   ├── matcher.py         # 岗位关键词和匹配评分
-│   │   ├── models.py          # 响应/请求模型
-│   │   ├── pdf_parser.py      # PDF 文本提取
-│   │   └── text_cleaner.py    # 文本清洗与分段
+│   ├── pom.xml
+│   ├── mvnw.cmd
 │   ├── Dockerfile
-│   └── requirements.txt
+│   └── src
+│       ├── main
+│       │   ├── java/com/example/resumematcher
+│       │   │   ├── controller        # REST 接口
+│       │   │   ├── service           # PDF 解析、清洗、AI 提取、匹配、缓存
+│       │   │   ├── model             # 请求/响应模型
+│       │   │   ├── config            # CORS 和应用配置
+│       │   │   └── exception         # 统一错误处理
+│       │   └── resources/application.yml
+│       └── test
 ├── frontend
 │   ├── app.js
 │   ├── index.html
@@ -46,20 +50,19 @@
 
 ### 1. 启动后端
 
+本机不需要全局安装 Maven，项目自带 `backend/mvnw.cmd` 会自动下载 Maven。
+
 ```powershell
-cd backend
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-Copy-Item .env.example .env
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+cd C:\Users\JueLuo\Desktop\bishi\backend
+.\mvnw.cmd spring-boot:run
 ```
 
-如需启用 AI 提取与 AI 评分，在 `backend/.env` 中填写：
+如需启用 AI 提取与 AI 评分，在当前 PowerShell 设置环境变量：
 
-```env
-OPENAI_API_KEY=你的 Key
-OPENAI_MODEL=gpt-4.1-mini
+```powershell
+$env:OPENAI_API_KEY="你的 Key"
+$env:OPENAI_MODEL="gpt-4.1-mini"
+.\mvnw.cmd spring-boot:run
 ```
 
 后端健康检查：
@@ -68,18 +71,19 @@ OPENAI_MODEL=gpt-4.1-mini
 http://localhost:8000/api/health
 ```
 
-接口文档：
-
-```text
-http://localhost:8000/docs
-```
-
 ### 2. 打开前端
 
 直接用浏览器打开：
 
 ```text
 frontend/index.html
+```
+
+也可以启动静态服务：
+
+```powershell
+cd C:\Users\JueLuo\Desktop\bishi\frontend
+python -m http.server 5173 --bind 127.0.0.1
 ```
 
 页面里的 API 地址默认是：
@@ -151,6 +155,7 @@ job_description=<岗位需求文本>
 OPENAI_API_KEY=你的 Key，可选
 OPENAI_MODEL=gpt-4.1-mini
 CORS_ORIGINS=*
+REDIS_URL=你的 Redis 地址，可选
 ```
 
 部署完成后得到后端地址，例如：
@@ -170,14 +175,19 @@ https://ai-resume-parser-api.onrender.com
 
 ## 缓存设计
 
-当前实现使用 Redis 优先、SQLite 兜底的缓存策略：
+缓存 Key 设计：
 
 - 简历缓存 Key：`resume:{pdf_sha256}`
 - 匹配缓存 Key：`match:{resume_id_or_text_and_job_description_sha256}`
 
-这样同一份简历重复上传时不会重复解析；同一份简历和同一段岗位需求重复评分时会直接返回缓存结果。
+本地运行时使用内存缓存。线上配置 `REDIS_URL` 后，系统会优先尝试写入 Redis；Redis 不可用时，不影响接口主流程。
 
-本地未配置 Redis 时自动使用 SQLite。线上如果配置 `REDIS_URL`，缓存会优先写入 Redis，并保留 SQLite 兜底。
+## 测试
+
+```powershell
+cd C:\Users\JueLuo\Desktop\bishi\backend
+.\mvnw.cmd test
+```
 
 ## 提交信息模板
 
