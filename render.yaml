@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: ai-resume-parser-api
+    env: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: CORS_ORIGINS
+        value: "*"

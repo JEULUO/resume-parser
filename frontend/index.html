@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Resume Matcher</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace">
+        <aside class="sidebar" aria-label="控制面板">
+          <div class="brand">
+            <div class="brand-mark">RM</div>
+            <div>
+              <h1>Resume Matcher</h1>
+              <p>PDF 解析与岗位匹配</p>
+            </div>
+          </div>
+
+          <label class="field">
+            <span>API 地址</span>
+            <input id="apiBase" type="url" value="http://localhost:8000" />
+          </label>
+
+          <label class="dropzone" for="resumeFile">
+            <input id="resumeFile" type="file" accept="application/pdf,.pdf" />
+            <i data-lucide="upload-cloud"></i>
+            <strong id="fileName">选择 PDF 简历</strong>
+            <span>单个文件，支持多页文本型 PDF</span>
+          </label>
+
+          <label class="field">
+            <span>岗位需求</span>
+            <textarea id="jobDescription" rows="10" placeholder="例如：3 年以上 Python 后端经验，熟悉 FastAPI、Redis、MySQL，有大模型应用开发经验优先。"></textarea>
+          </label>
+
+          <button id="analyzeBtn" class="primary-btn" type="button">
+            <i data-lucide="sparkles"></i>
+            <span>开始分析</span>
+          </button>
+
+          <p id="status" class="status">等待上传</p>
+        </aside>
+
+        <section class="results" aria-live="polite">
+          <div class="score-panel">
+            <div>
+              <span class="eyebrow">匹配度</span>
+              <div id="scoreValue" class="score">--</div>
+            </div>
+            <div class="meter" aria-hidden="true">
+              <div id="scoreBar"></div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <article class="panel">
+              <header>
+                <h2>关键信息</h2>
+                <i data-lucide="id-card"></i>
+              </header>
+              <dl id="keyInfo" class="info-list"></dl>
+            </article>
+
+            <article class="panel">
+              <header>
+                <h2>岗位关键词</h2>
+                <i data-lucide="scan-search"></i>
+              </header>
+              <div id="keywords" class="chips"></div>
+            </article>
+
+            <article class="panel wide">
+              <header>
+                <h2>匹配详情</h2>
+                <i data-lucide="activity"></i>
+              </header>
+              <div id="matchDetail" class="detail-empty">暂无结果</div>
+            </article>
+
+            <article class="panel wide">
+              <header>
+                <h2>结构化 JSON</h2>
+                <button id="copyJsonBtn" class="icon-btn" type="button" title="复制 JSON">
+                  <i data-lucide="copy"></i>
+                </button>
+              </header>
+              <pre id="jsonOutput">{}</pre>
+            </article>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>
