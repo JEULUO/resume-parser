@@ -11,8 +11,8 @@ RUN mvn dependency:go-offline -B
 COPY backend/src ./src
 RUN mvn clean package -DskipTests
 
-# 运行阶段：使用 Eclipse Temurin JRE
-FROM eclipse-temurin:17-jdk-slim
+# 运行阶段：使用 Amazon Corretto 17
+FROM amazoncorretto:17-al2023
 
 WORKDIR /app
 
