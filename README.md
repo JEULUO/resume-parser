@@ -192,8 +192,8 @@ cd C:\Users\JueLuo\Desktop\bishi\backend
 ## 提交信息模板
 
 ```text
-GitHub 仓库地址：<你的公开仓库地址>
-线上演示地址：<GitHub Pages 或其他公开访问地址>
+GitHub 仓库地址：https://github.com/JEULUO/resume-parser
+线上演示地址：https://jeuluo.github.io/resume-parser/
 姓名：毛骄
 联系方式：15523063767
 ```
