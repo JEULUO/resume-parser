@@ -1,9 +1,9 @@
-# 使用 Maven 镜像构建（自带 Maven，不需要 mvnw）
+# 使用 Maven 镜像构建
 FROM maven:3.8.4-openjdk-17 AS build
 
 WORKDIR /app
 
-# 复制 pom.xml 并下载依赖（利用 Docker 缓存）
+# 复制 pom.xml 并下载依赖
 COPY backend/pom.xml .
 RUN mvn dependency:go-offline -B
 
@@ -11,8 +11,8 @@ RUN mvn dependency:go-offline -B
 COPY backend/src ./src
 RUN mvn clean package -DskipTests
 
-# 运行阶段：使用轻量级 JRE
-FROM openjdk:17-jdk-slim
+# 运行阶段：使用 Eclipse Temurin JRE
+FROM eclipse-temurin:17-jdk-slim
 
 WORKDIR /app
 
