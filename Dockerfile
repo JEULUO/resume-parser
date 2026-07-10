@@ -1,23 +1,24 @@
-# 使用 JDK 17 作为基础镜像
-FROM openjdk:17-jdk-slim
+# 使用 Maven 镜像构建（自带 Maven，不需要 mvnw）
+FROM maven:3.8.4-openjdk-17 AS build
 
-# 设置工作目录
 WORKDIR /app
 
-# 复制 Maven 构建文件
+# 复制 pom.xml 并下载依赖（利用 Docker 缓存）
 COPY backend/pom.xml .
+RUN mvn dependency:go-offline -B
 
-# 复制 Maven Wrapper 相关文件（如果没有就跳过这行）
-COPY backend/mvnw* .
-
-# 复制源代码
+# 复制源代码并构建
 COPY backend/src ./src
+RUN mvn clean package -DskipTests
 
-# 构建应用（跳过测试）
-RUN ./mvnw clean package -DskipTests
+# 运行阶段：使用轻量级 JRE
+FROM openjdk:17-jdk-slim
 
-# 暴露端口
+WORKDIR /app
+
+# 从构建阶段复制 jar 包
+COPY --from=build /app/target/*.jar app.jar
+
 EXPOSE 8000
 
-# 启动应用
-CMD ["java", "-jar", "target/*.jar"]
+CMD ["java", "-jar", "app.jar"]
